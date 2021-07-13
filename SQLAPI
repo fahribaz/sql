@@ -1,0 +1,25 @@
+DECLARE @url AS NVARCHAR(4000) = 'https://jsonplaceholder.typicode.com/todos';
+
+--https://api.covidtracking.com/v1/states/ca/daily.json
+
+DECLARE @status INT;
+Declare @responseText as Table(responseText nvarchar(MAX))
+DECLARE @res AS INT
+DECLARE @JSON as NVARCHAR(MAX)
+
+EXEC sp_OACreate 'MSXML2.ServerXMLHTTP', @res OUT
+EXEC sp_OAMethod @res, 'open', NULL, 'GET', @url, 'false'
+EXEC sp_OAMethod @res, 'send'
+EXEC sp_OAGetProperty @res, 'status', @status OUT
+INSERT INTO @responseText (responseText) EXEC sp_OAGetProperty @res, 'responseText'
+EXEC sp_OADestroy @res
+
+SELECT @JSON=CONVERT(NVARCHAR(MAX), responseText) FROM @responseText
+
+select
+JSON_VALUE(VALUE, '$.userId') AS userId
+,JSON_VALUE(VALUE, '$.id') AS id
+,JSON_VALUE(VALUE, '$.title') AS title
+,JSON_VALUE(VALUE, '$.completed') AS completed
+
+FROM OPENJSON (@JSON)
